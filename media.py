@@ -4,7 +4,7 @@ from subprocess import Popen, PIPE
 from tornado.websocket import WebSocketHandler
 from tornado.ioloop import IOLoop
 from tornado.httpserver import HTTPServer
-from tornado.web import Application
+from tornado.web import Application, StaticFileHandler
 from os.path import join, dirname
 from os import walk, urandom
 from hsaudiotag import auto
@@ -92,7 +92,7 @@ class MusicDatabase(PropagationService):
         }
 
         self.collection.update(metadata, metadata, upsert=True)
-        self.propagate({'add_library': metadata})
+        self.propagate({'metadata': metadata})
 
     def add_folder(self, path=None):
         if not path:
@@ -107,7 +107,7 @@ class MusicDatabase(PropagationService):
         #self.propagate({''})
 
     def library(self):
-        result = list(self.collection.find(fields={'_id': False}))
+        result = list(self.collection.find())
 
         return {'library': result}
 
@@ -123,8 +123,7 @@ class Player(PropagationService):
 
         self._status_dict = {
             'playing': False,
-            'playlists': config['playlists'],
-            'music': config['music'],
+            'playlist': [],
             'current': {},
         }
 
@@ -153,8 +152,7 @@ class Player(PropagationService):
 
             self.propagate({
                 'playing': True,
-                'file': file['title'],
-                'length': file['duration'],
+                'current': result,
             })
         else:
             return {'error': 'Song does not exist in database'}
@@ -227,6 +225,8 @@ class WebPlayer(WebSocketHandler):
 
 
 def run(port=8080):
+    #static_root = join(dirname(__file__), 'web', 'web_client.html')
+
     settings = {
         'auto_reload': True,
         'xsrf_cookies': True,
@@ -235,6 +235,7 @@ def run(port=8080):
     }
 
     application = Application([
+        #(r'/^', StaticFileHandler, {'path': static_root}),
         (r'/player', WebPlayer),
     ], **settings)
 
