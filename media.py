@@ -18,17 +18,17 @@ except ImportError:
 LISTENERS = []
 
 
-class PropigationService(object):
+class PropagationService(object):
     '''
     Handles multi-client communication.
     '''
 
-    def _propigate(self, mapper):
+    def _propagate(self, mapper):
         for listener in LISTENERS:
             listener.send(mapper)
 
-    def propigate(self, mapper):
-        Thread(target=self._propigate, args=(mapper,)).start()
+    def propagate(self, mapper):
+        Thread(target=self._propagate, args=(mapper,)).start()
 
 
 def global_config():
@@ -40,7 +40,7 @@ def global_config():
     return config
 
 
-class MusicDatabase(PropigationService):
+class MusicDatabase(PropagationService):
     def __init__(self, config=global_config()):
         self._mongo_client = MongoClient()
         self.db = self._mongo_client.Music
@@ -92,7 +92,7 @@ class MusicDatabase(PropigationService):
         }
 
         self.collection.update(metadata, metadata, upsert=True)
-        self.propigate({'add_library': metadata})
+        self.propagate({'add_library': metadata})
 
     def add_folder(self, path=None):
         if not path:
@@ -104,7 +104,7 @@ class MusicDatabase(PropigationService):
         for walk_tuple in walk_list:
             self.cache_folder(walk_tuple)
 
-        #self.propigate({''})
+        #self.propagate({''})
 
     def library(self):
         result = list(self.collection.find(fields={'_id': False}))
@@ -112,7 +112,7 @@ class MusicDatabase(PropigationService):
         return {'library': result}
 
 
-class Player(PropigationService):
+class Player(PropagationService):
     '''
     Handles media playing.
     '''
@@ -151,7 +151,7 @@ class Player(PropigationService):
                                         args=(result['path'],))
             self._media_thread.start()
 
-            self.propigate({
+            self.propagate({
                 'playing': True,
                 'file': file['title'],
                 'length': file['duration'],
@@ -161,7 +161,7 @@ class Player(PropigationService):
 
     def pause(self):
         self.issue_command('pause')
-        self.propigate({'playing': not self.status['playing']})
+        self.propagate({'playing': not self.status['playing']})
 
     @property
     def status(self):
@@ -175,10 +175,10 @@ class Player(PropigationService):
         stdout_commnand = bytes(command + '\n', encoding="UTF-8")
         self._media.stdin.write(stdout_commnand)
 
-    def propigate(self, mapper):
+    def propagate(self, mapper):
         self._status_dict.update(mapper)
 
-        super().propigate(mapper)
+        super().propagate(mapper)
 
 
 class WebPlayer(WebSocketHandler):
