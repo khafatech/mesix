@@ -8,17 +8,17 @@ TODO:
     Current song time
 '''
 
-from pymongo import MongoClient
-from threading import Thread
-from subprocess import Popen, PIPE
-from tornado.websocket import WebSocketHandler
-from tornado.ioloop import IOLoop
-from tornado.httpserver import HTTPServer
-from tornado.web import Application
-from os.path import join, dirname
-from os import walk, urandom
-from hsaudiotag import auto
 from functools import partial
+from hsaudiotag import auto
+from os import walk, urandom
+from os.path import join, dirname
+from pymongo import MongoClient
+from subprocess import Popen, PIPE
+from threading import Thread
+from tornado.httpserver import HTTPServer
+from tornado.ioloop import IOLoop
+from tornado.web import Application
+from tornado.websocket import WebSocketHandler
 
 try:
     import ujson as json
@@ -38,14 +38,27 @@ class PropagationService(object):
     '''
 
     def _propagate(self, mapper):
+        '''
+        Propagates data to all clients.
+        TODO make asynchronous.
+        '''
+
         for listener in LISTENERS:
             listener.send(mapper)
 
     def propagate(self, mapper):
+        '''
+        Instantiates a thread to handle message propagation.
+        '''
+
         Thread(target=self._propagate, args=(mapper,)).start()
 
 
 def global_config():
+    '''
+    Configuration read from the config.json. This feels a little messy.
+    '''
+
     config_path = join(dirname(__file__), 'config.json')
     config = json.loads(open(config_path).read())
 
@@ -55,6 +68,10 @@ def global_config():
 
 
 class MusicDatabase(PropagationService):
+    '''
+    Interface for the music database. Handles both queries and writes.
+    '''
+
     def __init__(self, config=global_config()):
         self._mongo_client = MongoClient()
         self.db = self._mongo_client.Music
@@ -70,6 +87,10 @@ class MusicDatabase(PropagationService):
         Thread(target=self.add_folder).start()
 
     def get_media(self, path):
+        '''
+        Retrieves a song based off of its path.
+        '''
+
         return dict(self.collection.find_one({'path': path},
                                              fields={'_id': 0}))
 
@@ -96,6 +117,10 @@ class MusicDatabase(PropagationService):
             self.add_file(file)
 
     def add_file(self, file_path):
+        '''
+        Takes the path of a song and writes its information to the database.
+        '''
+
         meta = auto.File(file_path)
         metadata = {
             'artist': meta.artist,
@@ -110,6 +135,10 @@ class MusicDatabase(PropagationService):
         self.propagate({'metadata': metadata})
 
     def add_folder(self, path=None):
+        '''
+        Adds an entire folder of songs to the database.
+        '''
+
         if not path:
             path = self._config['music']
 
@@ -120,6 +149,10 @@ class MusicDatabase(PropagationService):
             self.cache_folder(walk_tuple)
 
     def library(self):
+        '''
+        The entire song library.
+        '''
+
         result = list(self.collection.find(fields={'_id': 0}))
 
         return {'library': result}
@@ -149,7 +182,8 @@ class MusicDatabase(PropagationService):
 
 class Player(PropagationService):
     '''
-    Handles media playing.
+    A wrapper over mplayer. Handles media playing.
+    TODO Playlists and queues.
     '''
 
     def __init__(self, config=global_config()):
@@ -164,17 +198,29 @@ class Player(PropagationService):
 
     @property
     def running(self):
+        '''
+        Is music playing?
+        '''
+
         if hasattr(self, '_media'):
             return True
         else:
             return False
 
     def stop(self):
+        '''
+        Stops music from playing.
+        '''
+
         self.issue_command('stop')
         self._media.kill()
         del self._media
 
     def play(self, file):
+        '''
+        Plays music from a specified file path.
+        '''
+
         result = self.db.get_media(file['path'])
 
         if result:
@@ -193,39 +239,64 @@ class Player(PropagationService):
             return {'error': 'Song does not exist in database'}
 
     def pause(self):
+        '''
+        Pauses music.
+        '''
+
         if hasattr(self, '_media'):
             self.issue_command('pause')
             self.propagate({'playing': not self.status['playing']})
 
     @property
-    def initial_payload(self):
-        return self.status
-
-        return payload
-
-    @property
     def status(self):
+        '''
+        Current state of the media player.
+        '''
+
         return self._status_dict
 
     def _play_media(self, media):
+        '''
+        Creates a new pipe to mplayer and plays a specified song.
+        '''
+
         self._media = Popen(['mplayer', '-slave', '-quiet', media],
                             stdout=PIPE, stderr=PIPE, stdin=PIPE)
 
     def issue_command(self, command):
+        '''
+        Issues a specified command to mplayer via STDIN.
+        See: http://www.mplayerhq.hu/DOCS/tech/slave.txt
+        '''
+
         stdout_commnand = bytes(command + '\n', encoding="UTF-8")
         self._media.stdin.write(stdout_commnand)
 
     def propagate(self, mapper):
+        '''
+        Overrides the original propagation method in order to update the player
+        status before broadcasting its state.
+        '''
+
         self._status_dict.update(mapper)
 
         super().propagate(mapper)
 
 
 class WebPlayer(WebSocketHandler):
+    '''
+    Handles communication with WebSocket clients.
+    '''
+
+    # Media player
     player = Player()
 
     @property
     def gatekeeper(self):
+        '''
+        Keys mapped to functions that are allowed to be called.
+        '''
+
         return {
             'play': self.player.play,
             'pause': self.player.pause,
@@ -235,13 +306,15 @@ class WebPlayer(WebSocketHandler):
         }
 
     def on_message(self, message):
+        '''
+        Handles an incoming message.
+        '''
+
         try:
             message = json.loads(message)
-            print(message)
             function = message.get('function')
             arguments = message.get('args') or {}
             func = self.gatekeeper.get(function) or self._nothing
-            #result = self.player.db.filter('album', 'ISAM')
             result = func(**arguments) if arguments else func()
             print('--------------------------- In ---------------------------')
             print(message)
@@ -257,17 +330,35 @@ class WebPlayer(WebSocketHandler):
             self.send({
                 'message': e,
             })
+
     def _nothing(self):
+        '''
+        Empty function call for fringe cases.
+        '''
+
         return False
 
     def on_close(self):
+        '''
+        Removes client from listeners upon socket close.
+        '''
+
         LISTENERS.remove(self)
 
     def open(self):
+        '''
+        Adds client to listeners and sends it the player state upon socket
+        open.
+        '''
+
         LISTENERS.append(self)
-        self.send(self.player.initial_payload)
+        self.send(self.player.status)
 
     def send(self, message):
+        '''
+        Serializes data into a JSON format and sends it to the client.
+        '''
+
         print('--------------------------- Out ---------------------------')
         print(message)
         if message:
@@ -275,8 +366,9 @@ class WebPlayer(WebSocketHandler):
 
 
 def run(port=8080):
-    #static_root = join(dirname(__file__), 'web', 'web_client.html')
-
+    '''
+    Run an instance of the web player.
+    '''
     settings = {
         'auto_reload': True,
         'xsrf_cookies': True,
@@ -285,7 +377,6 @@ def run(port=8080):
     }
 
     application = Application([
-        #(r'/^', StaticFileHandler, {'path': static_root}),
         (r'/player', WebPlayer),
     ], **settings)
 
