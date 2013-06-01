@@ -1,0 +1,36 @@
+<html ng-app='mesix'>
+    <head>
+        <script type="text/javascript" src="angular.min.js"></script>
+        <script type="text/javascript" src="mesix.js"></script>
+    </head>
+    <body ng-controller="AudioCtrl">
+        
+        <!-- Artist listing --!>
+        <div id="artists">
+            <div ng-repeat="artist in artist" ng-click="filterAlbumsByArtist(artist)">
+                {{ artist }}
+            </div>
+        </div>
+
+        <!-- Album listing --!>
+        <div id="albums">
+            <div ng-repeat="album_item in album" ng-click="filterSongsByAlbum(album_item)">
+                {{ album_item }}
+            </div>
+        </div>
+
+        <!-- Song listing --!>
+        <div id="songs">
+            <div ng-repeat="song in title"  ng-click="emitPlay(song)">
+                {{ song.title }} {{ song.duration }}
+            </div>
+        </div>
+
+
+        <!-- Pause/Play --!>
+        <div id="controls" ng-click="emitPause();">
+            <a href="javascript:void(0);">{{ control_state }}</a>
+            Playing: {{ current.title }} by {{ current.artist }} ({{ current.album }})
+        </div>
+    </body>
+</html>
