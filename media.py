@@ -1,13 +1,24 @@
+'''
+TODO:
+    Volume control
+    Music stream
+    Youtube/Soundcloud/Grooveshark integration
+    User authentication
+    Encryption
+    Current song time
+'''
+
 from pymongo import MongoClient
 from threading import Thread
 from subprocess import Popen, PIPE
 from tornado.websocket import WebSocketHandler
 from tornado.ioloop import IOLoop
 from tornado.httpserver import HTTPServer
-from tornado.web import Application, StaticFileHandler
+from tornado.web import Application
 from os.path import join, dirname
 from os import walk, urandom
 from hsaudiotag import auto
+from functools import partial
 
 try:
     import ujson as json
@@ -15,7 +26,10 @@ except ImportError:
     import json
 
 
+# List of clients
 LISTENERS = []
+# Enable all threads as daemons
+Thread = partial(Thread, daemon=1)
 
 
 class PropagationService(object):
@@ -56,7 +70,8 @@ class MusicDatabase(PropagationService):
         Thread(target=self.add_folder).start()
 
     def get_media(self, path):
-        return dict(self.collection.find_one({'path': path}))
+        return dict(self.collection.find_one({'path': path},
+                                             fields={'_id': 0}))
 
     @property
     def media_tree(self):
@@ -104,12 +119,32 @@ class MusicDatabase(PropagationService):
         for walk_tuple in walk_list:
             self.cache_folder(walk_tuple)
 
-        #self.propagate({''})
-
     def library(self):
-        result = list(self.collection.find())
+        result = list(self.collection.find(fields={'_id': 0}))
 
         return {'library': result}
+
+    def filter(self, key, query, all=False):
+        '''
+        Get a unique list of values for a key from a query. This could be
+        extended to except multiple keys. Set "all" to true to return all keys.
+        '''
+
+        fields = {'_id': 0}
+
+        if not all:
+            fields[key] = 1
+
+        print(fields)
+
+        result = self.collection.find(query, fields=fields)
+
+        if all:
+            value = list(result)
+        else:
+            value = set(d[key] for d in result)
+
+        return {'filter': {key: value}}
 
 
 class Player(PropagationService):
@@ -123,7 +158,7 @@ class Player(PropagationService):
 
         self._status_dict = {
             'playing': False,
-            'playlist': [],
+            'queue': [],
             'current': {},
         }
 
@@ -158,8 +193,15 @@ class Player(PropagationService):
             return {'error': 'Song does not exist in database'}
 
     def pause(self):
-        self.issue_command('pause')
-        self.propagate({'playing': not self.status['playing']})
+        if hasattr(self, '_media'):
+            self.issue_command('pause')
+            self.propagate({'playing': not self.status['playing']})
+
+    @property
+    def initial_payload(self):
+        return self.status
+
+        return payload
 
     @property
     def status(self):
@@ -189,26 +231,32 @@ class WebPlayer(WebSocketHandler):
             'pause': self.player.pause,
             'add_folder': self.player.db.add_folder,
             'library': self.player.db.library,
+            'filter': self.player.db.filter,
         }
 
     def on_message(self, message):
-        message = json.loads(message)
-        function = message.get('function')
-        arguments = message.get('args') or {}
-        func = self.gatekeeper.get(function) or self._nothing
-
-        #try:
-        result = func(**arguments) if arguments else func()
-
-        if result:
-            self.send(result)
-        #except Exception as e:
-        #    print(e)
-        #    self.send({
-        #        'success': False,
-        #        'message': 'Something bad happened',
-        #    })
-
+        try:
+            message = json.loads(message)
+            print(message)
+            function = message.get('function')
+            arguments = message.get('args') or {}
+            func = self.gatekeeper.get(function) or self._nothing
+            #result = self.player.db.filter('album', 'ISAM')
+            result = func(**arguments) if arguments else func()
+            print('--------------------------- In ---------------------------')
+            print(message)
+            if result:
+                self.send(result)
+        except Exception as e:
+            print('--------------------- Error occurred ---------------------')
+            print("Message recieved:")
+            print(message)
+            print('----------------------------------------------------------')
+            print("Exception raised:")
+            print(e)
+            self.send({
+                'message': e,
+            })
     def _nothing(self):
         return False
 
@@ -217,9 +265,11 @@ class WebPlayer(WebSocketHandler):
 
     def open(self):
         LISTENERS.append(self)
-        self.send(self.player.status)
+        self.send(self.player.initial_payload)
 
     def send(self, message):
+        print('--------------------------- Out ---------------------------')
+        print(message)
         if message:
             self.write_message(json.dumps(message))
 
