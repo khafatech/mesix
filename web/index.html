@@ -9,15 +9,15 @@
         <div class="container-fluid content">
             <div class="row-fluid">
                 
-                <!-- Playlists --!>
+                <!-- Playlists -->
                 <div class="playlists span2">Blank</div>
 
-                <!-- Filters --!>
+                <!-- Filters -->
                 <div class="filters span10">
                     <!--
                     Artists and albums are displayed on their own row,
                     above songs.
-                    --!>
+                    -->
                     <div class="row-fluid">
                         <!-- Artist listing --!>
                         <div id="artists" class="span4">
@@ -26,7 +26,7 @@
                             </div>
                         </div>
 
-                        <!-- Album listing --!>
+                        <!-- Album listing -->
                         <div id="albums" class="span4">
                             <div ng-repeat="album_item in album" ng-click="filterSongsByAlbum(album_item)">
                                 {{ album_item }}
@@ -34,7 +34,7 @@
                         </div>
                     </div>
 
-                    <!-- Song listing --!>
+                    <!-- Song listing -->
                     <div id="songs">
                         <div ng-repeat="song in title"  ng-click="emitPlay(song)">
                             {{ song.title }} {{ song.duration }}
@@ -44,7 +44,7 @@
             
             </div>
 
-            <!-- Pause/Play --!>
+            <!-- Pause/Play -->
             <div class="navbar-fixed-bottom footer" id="controls" ng-click="emitPause();">
                 <a href="javascript:void(0);">{{ control_state }}</a>
                 Playing: {{ current.title }} by {{ current.artist }} ({{ current.album }})
