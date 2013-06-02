@@ -1,0 +1,67 @@
+#header {
+    height: 10%;
+}
+
+#title {
+    font-size: 300%;
+    margin-top: 1.2%;
+}
+
+#content {
+    margin-top: 1.2%;
+    height: 80%;
+}
+
+#playInfo {
+    height: 7%;
+}
+
+#controls {
+    font-size: 800%;
+}
+
+#playlists {
+    height: 100%;
+}
+
+#controls a {
+    text-align: left;
+    padding: 0 6% 0 0;
+}
+
+#metadata {
+    text-align: left;
+    margin-top: -1.2%;
+}
+
+#metaInfo {
+    height: 50%
+}
+
+#songTitle {
+    font-size: 300%;
+    padding-bottom: 10%;
+}
+
+#songAlbumAndArtist {
+    font-size: 200%;
+}
+
+#controls div {
+    display: inline;
+}
+
+.category {
+    overflow: auto;
+}
+
+.playControl {
+}
+
+#topFilters {
+    height: 40%;
+}
+
+#songs {
+    height: 55%;
+}

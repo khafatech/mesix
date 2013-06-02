@@ -327,9 +327,7 @@ class WebPlayer(WebSocketHandler):
             print('----------------------------------------------------------')
             print("Exception raised:")
             print(e)
-            self.send({
-                'message': e,
-            })
+            self.send({'message': e})
 
     def _nothing(self):
         '''

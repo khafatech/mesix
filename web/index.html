@@ -1,16 +1,22 @@
 <html ng-app='mesix'>
     <head>
+        <!-- Third party -->
         <script type="text/javascript" src="assets/js/angular.min.js"></script>
-        <script type="text/javascript" src="assets/js/mesix.js"></script>
         <link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css">
+
+        <!-- Local -->
+        <script type="text/javascript" src="assets/js/mesix.js"></script>
+        <link rel="stylesheet" type="text/css" href="assets/css/base.css">
     </head>
     <body ng-controller="AudioCtrl">
-        <div class="title navbar-fixed header">Mesix</div>
-        <div class="container-fluid content">
+        <div id="header navbar-fixed-top">
+            <div id="title">Mesix</div>
+        </div>
+        <div class="container-fluid" id="content">
             <div class="row-fluid">
                 
                 <!-- Playlists -->
-                <div class="playlists span2">Blank</div>
+                <div class="playlists span2 category">Blank</div>
 
                 <!-- Filters -->
                 <div class="filters span10">
@@ -18,16 +24,16 @@
                     Artists and albums are displayed on their own row,
                     above songs.
                     -->
-                    <div class="row-fluid">
+                    <div class="row-fluid" id="topFilters">
                         <!-- Artist listing -->
-                        <div id="artists" class="span4">
+                        <div id="artists category" class="span6 category">
                             <div ng-repeat="artist in artist" ng-click="filterAlbumsByArtist(artist)">
                                 {{ artist }}
                             </div>
                         </div>
 
                         <!-- Album listing -->
-                        <div id="albums" class="span4">
+                        <div id="albums" class="span6 category">
                             <div ng-repeat="album_item in album" ng-click="filterSongsByAlbum(album_item)">
                                 {{ album_item }}
                             </div>
@@ -35,7 +41,7 @@
                     </div>
 
                     <!-- Song listing -->
-                    <div id="songs">
+                    <div id="songs" class="category">
                         <div ng-repeat="song in title"  ng-click="emitPlay(song)">
                             {{ song.title }} {{ song.duration }}
                         </div>
@@ -45,9 +51,16 @@
             </div>
 
             <!-- Pause/Play -->
-            <div class="navbar-fixed-bottom footer" id="controls" ng-click="emitPause();">
-                <a href="javascript:void(0);">{{ control_state }}</a>
-                Playing: {{ current.title }} by {{ current.artist }} ({{ current.album }})
+            <div id="playInfo" class="navbar-fixed-bottom">
+                <div class="span6" id="controls">
+                    <a href="javascript:void(0);" class="playControl">l&#60;</a>
+                    <a href="javascript:void(0);" class="playControl" ng-click="emitPause();">{{ control_state }}</a>
+                    <a href="javascript:void(0);" class="playControl">&#62;l</a>
+                </div>    
+                <div id="metadata" class="span16">
+                    <div class="metaInfo" id="songTitle">{{ current.title }}</div>
+                    <div class="metaInfo" id="songAlbumAndArtist">{{ current.artist }} ({{ current.album }})</div>
+                </div>
             </div>
         </div>
     </body>
