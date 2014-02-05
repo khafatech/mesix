@@ -140,7 +140,7 @@ class MusicDatabase(PropagationService):
         '''
 
         if not path:
-            path = self._config['music']
+            path = self._config['music_path']
 
         # Walk through entire music directory (could take awhile)
         walk_list = list(walk(path))
