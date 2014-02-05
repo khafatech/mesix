@@ -1,5 +1,15 @@
 
 
+## Ian's ideas
+
+- Volume control
+- Music stream
+- Youtube/Soundcloud/Grooveshark integration
+    * youtube playlist
+- User authentication
+- Encryption
+- Current song time
+
 ## Learn Mongodb
 
 ### test key/value storage
@@ -27,7 +37,5 @@
 - the function propagate sends a message (dict) to clients
 
 
-
-	
 
 
