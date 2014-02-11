@@ -1,11 +1,9 @@
 '''
-TODO:
-    Volume control
-    Music stream
-    Youtube/Soundcloud/Grooveshark integration
-    User authentication
-    Encryption
-    Current song time
+Mesix tornado server
+
+Written by github.com/aikbix
+
+
 '''
 
 from functools import partial
@@ -29,7 +27,11 @@ except ImportError:
 # List of clients
 LISTENERS = []
 # Enable all threads as daemons
-Thread = partial(Thread, daemon=1)
+# Thread = partial(Thread, daemon=1)
+
+# Enabling daemons doesn't work in my environment (-Mustafa)
+Thread = partial(Thread)
+
 
 
 class PropagationService(object):
@@ -84,7 +86,7 @@ class MusicDatabase(PropagationService):
         ])
 
         # Update the library
-        Thread(target=self.add_folder).start()
+        Thread(target=self.add_folder, args=(config['music_path'],)).start()
 
     def get_media(self, path):
         '''
