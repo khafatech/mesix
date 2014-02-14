@@ -18,10 +18,9 @@ from tornado.ioloop import IOLoop
 from tornado.web import Application
 from tornado.websocket import WebSocketHandler
 
-try:
-    import ujson as json
-except ImportError:
-    import json
+# the plain json library doesn't work
+import ujson as json
+
 
 
 # List of clients
