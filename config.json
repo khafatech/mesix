@@ -1,6 +1,6 @@
 {
-    "music": "/home/ian/Music",
-    "playlists": "/home/ian/playlists",
+    "music_path": "/home/pack/Music/mesix-music",
+    "playlists": "",
     "extensions": [
         "AIFF",
         "AU",

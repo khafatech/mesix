@@ -95,6 +95,7 @@ function AudioCtrl($scope, socket) {
     // UI functions
     //-------------------------------------------------------------------------
     
+    $scope.control_state = "II";
     
     /**
      * Change pause button based on boolean value.

@@ -7,8 +7,10 @@
 - Youtube/Soundcloud/Grooveshark integration
     * youtube playlist
 - User authentication
+    - use plugin?
 - Encryption
 - Current song time
+
 
 ## Learn Mongodb
 

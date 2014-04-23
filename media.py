@@ -92,6 +92,8 @@ class MusicDatabase(PropagationService):
         '''
         Retrieves a song based off of its path.
         '''
+        
+        # print "*** MusicDatabase.get_media(%s)" % path
 
         return dict(self.collection.find_one({'path': path},
                                              fields={'_id': 0}))
